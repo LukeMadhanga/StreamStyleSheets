@@ -246,6 +246,10 @@
     position: absolute;
     right: 0;
     box-shadow: 0px 0px 1px #777;
+    display: none;
+}
+#s3-menu:hover > #s3-menu-item-container {
+    display: block;
 }
 .s3-menu-item {
     display: block;

@@ -1,7 +1,34 @@
 (function (window, count) {
 
     var ef = function () {},
-    detailscache = {};
+    detailscache = {},
+    rf = {
+        margin: [{type: 'range', unsigned: true, label: 'top'},{type: 'range', unsigned: true, label: 'right'},{type: 'range', unsigned: true, label: 'bottom'},{type: 'range', unsigned: true, label: 'left'}],
+        marginTop: [{type: 'range', unsigned: true, units: ['px', 'em', '%']}],
+        background: [{type: 'text'}],
+        backgroundColor: [{type: 'color'}],
+        backgroundRepeat: [{type: 'option', options: ['repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'inherit']}],
+        border: [{type: 'option', options: [''], label: 'type'}, {type: 'text', label: 'thickness'}, {type: 'color', label: 'color'}],
+        boxShadow: [{type: 'option', options: ['outline', 'inset'], label: 'outline'}, {type: 'range', unsigned: true, label: 'x length'}, {type: 'range', unsigned: true, label: 'y length'}, {type: 'range', unsigned: true, label: 'blur radius', min: 0, units: ['px']}, {type: 'range', unsigned: true, label: 'spread', min: 0, units: ['px']}, {type: 'color', label: 'color'}],
+        content: [{type: 'text'}],
+        cursor: [{type: 'complete', options: ['auto', 'crosshair', 'default', 'pointer', 'move', 'e-resize', 'ne-resize', 'nw-resize', 'n-resize', 'se-resize', 'sw-resize', 's-resize', 'w-resize', 'text', 'wait', 'help', 'progress']}],
+        display: [{type: 'option', options: ['inline', 'block', 'list-item', 'run-in', 'inline-block', 'table', 'inline-table', 'table-row-group', 'table-header-group', 'table-footer-group', 'table-row', 'table-column-group', 'table-column', 'table-cell', 'table-caption', 'none', 'inherit']}],
+        fontFamily: [{type: 'text'}],
+        fontStyle: [{type: 'option', options: ['inherit', 'initial', 'italic', 'normal', 'oblique']}],
+        fontVariant: [{type: 'text'}],
+        fontWeight: [{type: 'complete', options: ['bold', 'lighter', 'normal']}],
+        overflow: [{type: 'option', options: ['auto', 'hidden', 'initial', 'inherit', 'overlay', 'scroll', 'visible']}],
+        position: [{type: 'option', options: ['absolute', 'fixed', 'inherit', 'initial', 'relative', 'static']}],
+        speak: [{type: 'option', options: ['auto', 'inherit', 'initial', 'none', 'normal']}],
+        textAlign: [{type: 'option', options: ['left', 'right', 'center', 'justify', 'inherit']}],
+        textTransform: [{type: 'option', options: ['capitalize', 'uppercase', 'lowercase', 'none', 'inherit']}],
+        width: [{type: 'range', min: 0, units: ['px', 'em', '%']}]
+    };
+    rf.lineHeight = rf.minWidth = rf.minHeight = rf.borderBottomLeftRadius = rf.borderBottomRightRadius = rf.borderTopLeftRadius = rf.borderTopRightRadius = rf.borderRadius = rf.height = rf.width;
+    rf.padding = rf.margin;
+    rf.zIndex = rf.right = rf.bottom = rf.left = rf.top = rf.marginRight = rf.marginBottom = rf.marginLeft = rf.paddingRight = rf.paddingBottom = rf.paddingLeft = rf.paddingTop = rf.marginTop;
+    rf.borderTop = rf.borderRight = rf.borderBottom = rf.borderLeft = rf.border;
+    console.log(rf);
 
     /**
      * Trim the ends of a string
