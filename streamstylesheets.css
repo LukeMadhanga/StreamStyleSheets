@@ -241,6 +241,7 @@
 #s3-theme-body {
     background-color: #E9E4E4;
     min-height: 50px;
+    padding: 10px;
 }
 #s3-menu-item-container {
     position: absolute;
@@ -262,4 +263,17 @@
 }
 .s3-menu-item:hover {
     background-color: #EFEFEF;
+}
+#s3-body-inner {
+    max-width: 300px;
+    margin: auto;
+}
+.s3-rule-title {
+    text-transform: uppercase;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: default;
+}
+.s3-rule-container {
+    margin: 10px 0;
 }

@@ -2,6 +2,30 @@
 
     var ef = function () {},
     detailscache = {},
+    render = function (desc) {
+        var output = '';
+        if (desc.label) {
+            output += getHtml('div', desc.label, null, 's3-elem-label');
+        }
+        var input = '';
+        switch (desc.type) {
+            case 'color':
+                input = getHtml('input', null, null, 's3-input s3-color-picker', {
+                    type: 'color', placeholder: '#000000', patter: '#[a-f0-9]{6}'
+                });
+                break;
+            case 'complete':
+                break;
+            case 'option':
+                break;
+            case 'range':
+                break;
+            case 'text':
+            default:
+        }
+        output += getHtml('div', input, null, 's3-input-container');
+        return output;
+    },
     rf = {
         margin: [{type: 'range', unsigned: true, label: 'top'},{type: 'range', unsigned: true, label: 'right'},{type: 'range', unsigned: true, label: 'bottom'},{type: 'range', unsigned: true, label: 'left'}],
         marginTop: [{type: 'range', unsigned: true, units: ['px', 'em', '%']}],
@@ -255,6 +279,20 @@
         $('#s3-theme-editor-container').removeClass('s3-hidden');
     }
     
+    function renderRules(data, rule) {
+        if (!data) {
+            return;
+        }
+        var r = rule.replace(/([^a-z])/g, function (x) {
+            return ' ' + x.toLowerCase();
+        });
+        var output = getHtml('div', r, null, 's3-rule-title');
+        for (var i = 0; i < data.length; i++) {
+            output += getHtml('div', render(data[i]), null, 's3-rule-container');
+        }
+        $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
+    }
+    
     /**
      * Build the menu that allows the user to switch between rules to edit
      * @param {jqelem} elem
@@ -268,8 +306,13 @@
             mc.append(getHtml('span', sl[i], null, 's3-menu-item', {'data-rule': sl[i]}));
         }
         $('.s3-menu-item').click(function () {
-            
+            var rule = $(this).data('rule').replace(/-(.)/g, function (x) {
+                return x[1].toUpperCase();
+            }),
+            desc = rf[rule];
+            renderRules(desc, rule);
         });
+        $('.s3-menu-item:first').click();
     }
     
     window.streamStyleSheets = function (opts) {
@@ -382,7 +425,9 @@
                 }, 200);
             });
             $('#s3-close-window').unbind('click.s3').bind('click.s3', function () {
-                
+                $('.s3-active-pulse').removeClass('s3-active-pulse');
+                $('.s3-active-dot').removeClass('s3-active-dot');
+                $('#s3-theme-editor-container').addClass('s3-hidden');
             });
         }
 
