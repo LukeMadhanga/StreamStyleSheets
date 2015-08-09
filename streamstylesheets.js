@@ -213,7 +213,6 @@
      */
     function rgbStringToHex(string) {
         var bits = string.replace(' ', '').replace(/rgb(:?a)?\(([^\)]*)\)/, "$2").split(',');
-        console.log(bits);
         return {hex: string.match(/^#/) ? string : rgbToHex(+bits[0], +bits[1], +bits[2]), a: bits[4] ? bits[4] : 1};
     }
     
@@ -275,113 +274,9 @@
         return output;
     }
     
-    /**
-     * Render a pulse animation on the middle of an element
-     * @param {DOMElement} elem The element for which a pulse is being rendered
-     */
-    function renderPulse(elem) {
-        var rect = elem.getBoundingClientRect(),
-        output = getHtml('div', null, null, 's3-pulse') + getHtml('div', null, null, 's3-dot'),
-        elemkey = $(elem).data('s3-elem-key');
-        // Remove any previous instances of the pulse
-        $('[data-s3-for="' + elemkey + '"]').remove();
-        $('#s3-pulse-container-all').append(getHtml('div', output, null, 's3-pulse-container', {'data-s3-for': elemkey}));
-        var pulse = $('[data-s3-for="' + elemkey + '"]');
-        pulse.css({top: rect.top + (rect.height / 2), left: rect.left + (rect.width / 2)});
-        pulse.click(displayEditor);
-    }
-    
-    /**
-     * Render the editor body
-     */
-    function renderEditor() {
-        if ($('#s3-theme-editor').length) {
-            // The editor has already been built
-            return;
-        }
-        var html = getHtml('div', renderHeadButtons(), 's3-editor-head');
-        
-        html += getHtml('div', null, 's3-theme-body');
-        $('body').append(getHtml('div', getHtml('div', html, 's3-theme-editor'), 's3-theme-editor-container', 's3-hidden'));
-    }
-    
-    /**
-     * Render the header buttons
-     * @returns {html}
-     */
-    function renderHeadButtons() {
-        return getHtml('span', getHtml('div', null, 's3-menu-item-container'), 's3-menu', 's3-head-btn s3icons-reorder') + 
-                getHtml('span', null, 's3-close-window', 's3-head-btn s3icons-check');
-    }
-    
-    function displayEditor() {
-        var t = $(this);
-        $('.s3-pulse', t).addClass('s3-active-pulse');
-        $('.s3-dot', t).addClass('s3-active-dot');
-        buildMenu(t);
-        $('#s3-theme-editor-container').removeClass('s3-hidden');
-    }
-    
-    function renderRules(data, rule, def) {
-        if (!data) {
-            return;
-        }
-        var r = rule.replace(/([^a-z])/g, function (x) {
-            return ' ' + x.toLowerCase();
-        });
-        var output = getHtml('div', r, null, 's3-rule-title');
-        for (var i = 0; i < data.length; i++) {
-            output += getHtml('div', render(data[i]), null, 's3-rule-container');
-        }
-        $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
-        var defbits = def.split(/[^, ] ,/);
-        $('.s3-input').each(function (e) {
-            var desc = $(this).data('desc');
-            if (e < defbits.length) {
-                var val = defbits[e];
-                switch (desc.type) {
-                    case 'color':
-                        val = rgbStringToHex(val).hex;
-                        break;
-                    case 'range':
-                        val = +val.replace('px', '');
-                        break;
-                }
-                $(this).val(val);
-            }
-        });
-        
-        $('.s3-input').change(function () {
-            var t = $(this),
-            desc = t.data('desc');
-        });
-    }
-    
-    /**
-     * Build the menu that allows the user to switch between rules to edit
-     * @param {jqelem} elem
-     */
-    function buildMenu(elem) {
-        var key = elem.data('s3-for'),
-        sl = detailscache[key]['allowedstyles'],
-        mc = $('#s3-menu-item-container');
-        mc.children().remove();
-        for (var i = 0; i < sl.length; i ++) {
-            mc.append(getHtml('span', sl[i], null, 's3-menu-item', {'data-rule': sl[i]}));
-        }
-        $('.s3-menu-item').click(function () {
-            var r = $(this).data('rule');
-            var rule = r.replace(/-(.)/g, function (x) {
-                return x[1].toUpperCase();
-            }),
-            desc = rf[rule];
-            renderRules(desc, rule, getStyle($(key)[0], r));
-        });
-        $('.s3-menu-item:first').click();
-    }
-    
     window.streamStyleSheets = function (opts) {
         var T = {
+            currentkey: null,
             s: $.extend({
                 autoinit: true,
                 allowedpseudostates: ['hover'],
@@ -398,7 +293,7 @@
                 $('body').append(getHtml('div', null, 's3-pulse-container-all'));
             }
             cacheDetails();
-            renderEditor();
+            T.renderEditor();
             initBinding();
             execCallback('init');
         };
@@ -436,7 +331,7 @@
                     key = getElementEventKey.call(this),
                     output = {css: {}, defcss: {}, allowedstyles: curobj.allowedstyles},
                     hasstyles = false;
-                    renderPulse(this);
+                    T.renderPulse(this);
                     if (ev) {
                         // This element has events. Add them to the details
                         output.events = ev;
@@ -474,6 +369,112 @@
                 });
             }
         }
+    
+        /**
+         * Render a pulse animation on the middle of an element
+         * @param {DOMElement} elem The element for which a pulse is being rendered
+         */
+        T.renderPulse = function(elem) {
+            var rect = elem.getBoundingClientRect(),
+            output = getHtml('div', null, null, 's3-pulse') + getHtml('div', null, null, 's3-dot'),
+            elemkey = $(elem).data('s3-elem-key');
+            // Remove any previous instances of the pulse
+            $('[data-s3-for="' + elemkey + '"]').remove();
+            $('#s3-pulse-container-all').append(getHtml('div', output, null, 's3-pulse-container', {'data-s3-for': elemkey}));
+            var pulse = $('[data-s3-for="' + elemkey + '"]');
+            pulse.css({top: rect.top + (rect.height / 2), left: rect.left + (rect.width / 2)});
+            pulse.click(T.displayEditor);
+        };
+
+        /**
+         * Render the editor body
+         */
+        T.renderEditor = function () {
+            if ($('#s3-theme-editor').length) {
+                // The editor has already been built
+                return;
+            }
+            var html = getHtml('div', T.renderHeadButtons(), 's3-editor-head');
+
+            html += getHtml('div', null, 's3-theme-body');
+            $('body').append(getHtml('div', getHtml('div', html, 's3-theme-editor'), 's3-theme-editor-container', 's3-hidden'));
+        };
+
+        /**
+         * Render the header buttons
+         * @returns {html}
+         */
+        T.renderHeadButtons = function () {
+            return getHtml('span', getHtml('div', null, 's3-menu-item-container'), 's3-menu', 's3-head-btn s3icons-reorder') + 
+                    getHtml('span', null, 's3-close-window', 's3-head-btn s3icons-check');
+        };
+
+        T.displayEditor = function() {
+            var t = $(this);
+            $('.s3-pulse', t).addClass('s3-active-pulse');
+            $('.s3-dot', t).addClass('s3-active-dot');
+            T.buildMenu(t);
+            $('#s3-theme-editor-container').removeClass('s3-hidden');
+        };
+        
+        
+        function renderRules(data, rule, def) {
+            if (!data) {
+                return;
+            }
+            var r = rule.replace(/([^a-z])/g, function (x) {
+                return ' ' + x.toLowerCase();
+            });
+            var output = getHtml('div', r, null, 's3-rule-title');
+            for (var i = 0; i < data.length; i++) {
+                output += getHtml('div', render(data[i]), null, 's3-rule-container');
+            }
+            $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
+            var defbits = def.split(/[^, ] ,/);
+            $('.s3-input').each(function (e) {
+                var desc = $(this).data('desc');
+                if (e < defbits.length) {
+                    var val = defbits[e];
+                    switch (desc.type) {
+                        case 'color':
+                            val = rgbStringToHex(val).hex;
+                            break;
+                        case 'range':
+                            val = +val.replace('px', '');
+                            break;
+                    }
+                    $(this).val(val);
+                }
+            });
+
+            $('.s3-input').change(function () {
+                var t = $(this),
+                desc = t.data('desc');
+            });
+        }
+
+        /**
+         * Build the menu that allows the user to switch between rules to edit
+         * @param {jqelem} elem
+         */
+        T.buildMenu = function(elem) {
+            var key = elem.data('s3-for'),
+            sl = detailscache[key]['allowedstyles'],
+            mc = $('#s3-menu-item-container');
+            mc.children().remove();
+            for (var i = 0; i < sl.length; i ++) {
+                mc.append(getHtml('span', sl[i], null, 's3-menu-item', {'data-rule': sl[i]}));
+            }
+            $('.s3-menu-item').click(function () {
+                var r = $(this).data('rule');
+                var rule = r.replace(/-(.)/g, function (x) {
+                    return x[1].toUpperCase();
+                }),
+                desc = rf[rule];
+                renderRules(desc, rule, getStyle($(key)[0], r));
+            });
+            $('.s3-menu-item:first').click();
+        };
         
         function initBinding() {
             $(window).unbind('resize.s3').bind('resize.s3', function () {
@@ -485,7 +486,7 @@
                         var curobj = dl[i],
                         elements = $(curobj.selector);
                         elements.each(function () {
-                            renderPulse(this);
+                            T.renderPulse(this);
                         });
                     }
                 }, 200);
