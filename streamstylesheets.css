@@ -1,3 +1,4 @@
+@import url(http://fonts.googleapis.com/css?family=Lato:900);
 @font-face {
 	font-family: 'StreamStyleSheets';
 	src:url('fonts/StreamStyleSheets.eot?45bc92');
@@ -242,6 +243,9 @@
     background-color: #E9E4E4;
     min-height: 50px;
     padding: 10px;
+    max-height: 80%;
+    max-height: calc(80% - 150px);
+    overflow: auto;
 }
 #s3-menu-item-container {
     position: absolute;
@@ -266,14 +270,43 @@
 }
 #s3-body-inner {
     max-width: 300px;
-    margin: auto;
+    margin: 10px auto;
+}
+.s3-input {
+    outline: none;
+    width: 100%;
 }
 .s3-rule-title {
     text-transform: uppercase;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 900;
     cursor: default;
+    letter-spacing: 2px;
+    color: #333;
+    padding: 0 0 10px;
+    border-bottom: solid thin #BBB;
 }
 .s3-rule-container {
     margin: 10px 0;
+}
+.s3-select {
+    -webkit-appearance:none;
+    -moz-appearance:none;
+    appearance:none;
+    padding: 10px;
+    border-radius: 0;
+    border: solid thin #ccc;
+}
+.s3-color-picker {
+    padding: 0;
+    background: none;
+    border: none;
+}
+.s3-number {
+    padding: 10px;
+    border: solid thin #ccc;
+}
+.s3-elem-label {
+    margin: 5px 0;
+    color: #999;
 }

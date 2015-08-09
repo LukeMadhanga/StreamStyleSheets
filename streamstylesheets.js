@@ -7,33 +7,52 @@
         if (desc.label) {
             output += getHtml('div', desc.label, null, 's3-elem-label');
         }
-        var input = '';
+        var input = '',
+        attribs = {'data-desc': JSON.stringify(desc)};
         switch (desc.type) {
             case 'color':
-                input = getHtml('input', null, null, 's3-input s3-color-picker', {
-                    type: 'color', placeholder: '#000000', patter: '#[a-f0-9]{6}'
-                });
-                break;
-            case 'complete':
+                attribs.type = 'color';
+                attribs.placeholder = '#000000';
+                attribs.pattern = '#[a-f0-9]{6}';
+                input = getHtml('input', null, null, 's3-input s3-color-picker', attribs);
                 break;
             case 'option':
+                var opts = '';
+                for (var i = 0; i < desc.options.length; i++) {
+                    var curopt = desc.options[i];
+                    opts += getHtml('option', curopt, null, null, {value: curopt});
+                }
+                input = getHtml('select', opts, null, 's3-input s3-select', attribs);
                 break;
             case 'range':
+                attribs.type = ('min' in desc) && ('max' in desc) ? 'range' : 'number';;
+                if ('min' in desc) {
+                    attribs.min = desc.min;
+                }
+                if ('max' in desc) {
+                    attribs.max = desc.max;
+                }
+                if ('step' in desc) {
+                    attribs.step = desc.step;
+                }
+                input = getHtml('input', null, null, 's3-input s3-' + attribs.type, attribs);
                 break;
+            case 'complete':
             case 'text':
+                input = getHtml('input', null, 's3-input s3-text', attribs);
             default:
         }
         output += getHtml('div', input, null, 's3-input-container');
         return output;
     },
     rf = {
-        margin: [{type: 'range', unsigned: true, label: 'top'},{type: 'range', unsigned: true, label: 'right'},{type: 'range', unsigned: true, label: 'bottom'},{type: 'range', unsigned: true, label: 'left'}],
-        marginTop: [{type: 'range', unsigned: true, units: ['px', 'em', '%']}],
+        margin: [{type: 'range', label: 'top'}, {type: 'range', label: 'right'}, {type: 'range', label: 'bottom'}, {type: 'range', label: 'left'}],
+        marginTop: [{type: 'range', units: ['px', 'em', '%']}],
         background: [{type: 'text'}],
         backgroundColor: [{type: 'color'}],
         backgroundRepeat: [{type: 'option', options: ['repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'inherit']}],
         border: [{type: 'option', options: [''], label: 'type'}, {type: 'text', label: 'thickness'}, {type: 'color', label: 'color'}],
-        boxShadow: [{type: 'option', options: ['outline', 'inset'], label: 'outline'}, {type: 'range', unsigned: true, label: 'x length'}, {type: 'range', unsigned: true, label: 'y length'}, {type: 'range', unsigned: true, label: 'blur radius', min: 0, units: ['px']}, {type: 'range', unsigned: true, label: 'spread', min: 0, units: ['px']}, {type: 'color', label: 'color'}],
+        boxShadow: [{type: 'option', options: ['outline', 'inset'], label: 'outline'}, {type: 'range', label: 'x length'}, {type: 'range', label: 'y length'}, {type: 'range', label: 'blur radius', min: 0, units: ['px']}, {type: 'range', label: 'spread', min: 0, units: ['px']}, {type: 'color', label: 'color'}],
         content: [{type: 'text'}],
         cursor: [{type: 'complete', options: ['auto', 'crosshair', 'default', 'pointer', 'move', 'e-resize', 'ne-resize', 'nw-resize', 'n-resize', 'se-resize', 'sw-resize', 's-resize', 'w-resize', 'text', 'wait', 'help', 'progress']}],
         display: [{type: 'option', options: ['inline', 'block', 'list-item', 'run-in', 'inline-block', 'table', 'inline-table', 'table-row-group', 'table-header-group', 'table-footer-group', 'table-row', 'table-column-group', 'table-column', 'table-cell', 'table-caption', 'none', 'inherit']}],
@@ -41,6 +60,7 @@
         fontStyle: [{type: 'option', options: ['inherit', 'initial', 'italic', 'normal', 'oblique']}],
         fontVariant: [{type: 'text'}],
         fontWeight: [{type: 'complete', options: ['bold', 'lighter', 'normal']}],
+        opacity: [{type: 'range', min: 0, max: 1, step: '.01'}],
         overflow: [{type: 'option', options: ['auto', 'hidden', 'initial', 'inherit', 'overlay', 'scroll', 'visible']}],
         position: [{type: 'option', options: ['absolute', 'fixed', 'inherit', 'initial', 'relative', 'static']}],
         speak: [{type: 'option', options: ['auto', 'inherit', 'initial', 'none', 'normal']}],
@@ -174,7 +194,7 @@
         $('body').append(elem);
         for (var i = 0; i < stylelist.length; i++) {
             var rule = stylelist[i],
-                    def = getStyle(elem, rule);
+            def = getStyle(elem, rule);
             output[rule] = def;
         }
         $(elem).remove();
@@ -185,6 +205,29 @@
      * @type int
      */
     resizeTimeout;
+    
+    /**
+     * Convert an rgb(a) string into a hexadecimal
+     * @param {stirng} string An rgb(a) color definition
+     * @returns {object} An object with two properties, hex (the hexadecimal value of the color) and a (The alpha value)
+     */
+    function rgbStringToHex(string) {
+        var bits = string.replace(' ', '').replace(/rgb(:?a)?\(([^\)]*)\)/, "$2").split(',');
+        console.log(bits);
+        return {hex: string.match(/^#/) ? string : rgbToHex(+bits[0], +bits[1], +bits[2]), a: bits[4] ? bits[4] : 1};
+    }
+    
+    /**
+     * Convert a color from its RGB components into a hexadecimal value with leading hash
+     * @see http://goo.gl/amRqN4
+     * @param {int} r The red color value
+     * @param {int} g The green color value
+     * @param {int} b The blue color value
+     * @returns {string} The hexadecimal value of the RGB string
+     */
+    function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
 
     /**
      * Get a unique CSS selector for a given object
@@ -279,7 +322,7 @@
         $('#s3-theme-editor-container').removeClass('s3-hidden');
     }
     
-    function renderRules(data, rule) {
+    function renderRules(data, rule, def) {
         if (!data) {
             return;
         }
@@ -291,6 +334,27 @@
             output += getHtml('div', render(data[i]), null, 's3-rule-container');
         }
         $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
+        var defbits = def.split(/[^, ] ,/);
+        $('.s3-input').each(function (e) {
+            var desc = $(this).data('desc');
+            if (e < defbits.length) {
+                var val = defbits[e];
+                switch (desc.type) {
+                    case 'color':
+                        val = rgbStringToHex(val).hex;
+                        break;
+                    case 'range':
+                        val = +val.replace('px', '');
+                        break;
+                }
+                $(this).val(val);
+            }
+        });
+        
+        $('.s3-input').change(function () {
+            var t = $(this),
+            desc = t.data('desc');
+        });
     }
     
     /**
@@ -306,11 +370,12 @@
             mc.append(getHtml('span', sl[i], null, 's3-menu-item', {'data-rule': sl[i]}));
         }
         $('.s3-menu-item').click(function () {
-            var rule = $(this).data('rule').replace(/-(.)/g, function (x) {
+            var r = $(this).data('rule');
+            var rule = r.replace(/-(.)/g, function (x) {
                 return x[1].toUpperCase();
             }),
             desc = rf[rule];
-            renderRules(desc, rule);
+            renderRules(desc, rule, getStyle($(key)[0], r));
         });
         $('.s3-menu-item:first').click();
     }
@@ -322,7 +387,8 @@
                 allowedpseudostates: ['hover'],
                 datalist: [],
                 oninit: ef
-            }, opts)
+            }, opts),
+            values: {}
         };
         
         
