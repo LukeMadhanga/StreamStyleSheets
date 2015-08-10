@@ -67,7 +67,8 @@
         textAlign: [{type: 'option', options: ['left', 'right', 'center', 'justify', 'inherit']}],
         textTransform: [{type: 'option', options: ['capitalize', 'uppercase', 'lowercase', 'none', 'inherit']}],
         width: [{type: 'range', min: 0, units: ['px', 'em', '%']}]
-    };
+    },
+    requiresPrefix = ['borderRadius'];
     rf.lineHeight = rf.minWidth = rf.minHeight = rf.borderBottomLeftRadius = rf.borderBottomRightRadius = rf.borderTopLeftRadius = rf.borderTopRightRadius = rf.borderRadius = rf.height = rf.width;
     rf.padding = rf.margin;
     rf.zIndex = rf.right = rf.bottom = rf.left = rf.top = rf.marginRight = rf.marginBottom = rf.marginLeft = rf.paddingRight = rf.paddingBottom = rf.paddingLeft = rf.paddingTop = rf.marginTop;
@@ -274,6 +275,21 @@
         return output;
     }
     
+    /**
+     * 
+     * @param {string} rule
+     * @param {mixed} value
+     */
+    function updateCodeArea(rule, value) {
+        var r = rule.replace(' ', '-');
+        var prefs = requiresPrefix.indexOf(r) !== -1 ? ['-webkit-', '-moz-', ''] : [''];
+        var bits = [];
+        for (var i = 0; i < prefs.length; i++) {
+            bits[bits.length] = prefs[i] + r + ': ' + value + ';';
+        }
+        $('#s3-code-area').html(bits.join('<br/>'));
+    }
+    
     window.streamStyleSheets = function (opts) {
         var T = {
             currentkey: null,
@@ -415,6 +431,7 @@
             $('.s3-dot', t).addClass('s3-active-dot');
             T.buildMenu(t);
             $('#s3-theme-editor-container').removeClass('s3-hidden');
+            T.currentkey = t.data('s3-for');
         };
         
         
@@ -429,8 +446,10 @@
             for (var i = 0; i < data.length; i++) {
                 output += getHtml('div', render(data[i]), null, 's3-rule-container');
             }
+            output += getHtml('div', null, 's3-code-area');
             $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
             var defbits = def.split(/[^, ] ,/);
+            var valbits = [];
             $('.s3-input').each(function (e) {
                 var desc = $(this).data('desc');
                 if (e < defbits.length) {
@@ -444,12 +463,20 @@
                             break;
                     }
                     $(this).val(val);
+                    valbits[valbits.length] = val;
                 }
             });
+            updateCodeArea(r, valbits.join(' '));
 
             $('.s3-input').change(function () {
-                var t = $(this),
-                desc = t.data('desc');
+                var vb = [];
+                $('.s3-input').each(function (e) {
+                    vb[e] = this.value;
+                });
+                var cssvalue = vb.join(' ');
+                updateCodeArea(r, cssvalue);
+                console.log(r, cssvalue);
+                $(T.currentkey).css(r.replace(' ', '-'), cssvalue);
             });
         }
 
