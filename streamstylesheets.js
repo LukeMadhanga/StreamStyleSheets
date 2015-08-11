@@ -4,8 +4,8 @@
     detailscache = {},
     render = function (desc) {
         var output = '';
-        if (desc.label) {
-            output += getHtml('div', desc.label, null, 's3-elem-label');
+        if (desc.label || desc.type === 'none') {
+            output += getHtml('div', desc.label || 'Disabled', null, 's3-elem-label');
         }
         var input = '',
         attribs = {'data-desc': JSON.stringify(desc)};
@@ -15,6 +15,10 @@
                 attribs.placeholder = '#000000';
                 attribs.pattern = '#[a-f0-9]{6}';
                 input = getHtml('input', null, null, 's3-input s3-color-picker', attribs);
+                break;
+            case 'none':
+                attribs.type = 'checkbox';
+                input += getHtml('input', null, null, 's3-disabled', attribs);
                 break;
             case 'option':
                 var opts = '';
@@ -39,8 +43,8 @@
                 break;
             case 'complete':
             case 'text':
-                input = getHtml('input', null, 's3-input s3-text', attribs);
             default:
+                input = getHtml('input', null, null, 's3-input s3-text', attribs);
         }
         output += getHtml('div', input, null, 's3-input-container');
         return output;
@@ -51,7 +55,7 @@
         background: [{type: 'text'}],
         backgroundColor: [{type: 'color'}],
         backgroundRepeat: [{type: 'option', options: ['repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'inherit']}],
-        border: [{type: 'option', options: [''], label: 'type'}, {type: 'text', label: 'thickness'}, {type: 'color', label: 'color'}],
+        border: [{type: 'none'}, {type: 'text', label: 'thickness'}, {type: 'option', options: ['solid', 'dotted', 'dashed'], label: 'style'}, {type: 'color', label: 'color'}],
         boxShadow: [{type: 'option', options: ['outline', 'inset'], label: 'outline'}, {type: 'range', label: 'x length'}, {type: 'range', label: 'y length'}, {type: 'range', label: 'blur radius', min: 0, units: ['px']}, {type: 'range', label: 'spread', min: 0, units: ['px']}, {type: 'color', label: 'color'}],
         content: [{type: 'text'}],
         cursor: [{type: 'complete', options: ['auto', 'crosshair', 'default', 'pointer', 'move', 'e-resize', 'ne-resize', 'nw-resize', 'n-resize', 'se-resize', 'sw-resize', 's-resize', 'w-resize', 'text', 'wait', 'help', 'progress']}],
@@ -73,6 +77,7 @@
     rf.padding = rf.margin;
     rf.zIndex = rf.right = rf.bottom = rf.left = rf.top = rf.marginRight = rf.marginBottom = rf.marginLeft = rf.paddingRight = rf.paddingBottom = rf.paddingLeft = rf.paddingTop = rf.marginTop;
     rf.borderTop = rf.borderRight = rf.borderBottom = rf.borderLeft = rf.border;
+    rf.color = rf.backgroundColor;
     console.log(rf);
 
     /**
@@ -293,6 +298,8 @@
     window.streamStyleSheets = function (opts) {
         var T = {
             currentkey: null,
+            history: [],
+            historykey: 0,
             s: $.extend({
                 autoinit: true,
                 allowedpseudostates: ['hover'],
@@ -300,7 +307,8 @@
                 oninit: ef
             }, opts),
             values: {}
-        };
+        },
+        updatinghistory = false;
         
         
         T.init = function() {
@@ -441,44 +449,84 @@
             }
             var r = rule.replace(/([^a-z])/g, function (x) {
                 return ' ' + x.toLowerCase();
-            });
-            var output = getHtml('div', r, null, 's3-rule-title');
+            }),
+            output = getHtml('div', r, null, 's3-rule-title'),
+            cssrule = r.replace(' ', '-');
             for (var i = 0; i < data.length; i++) {
                 output += getHtml('div', render(data[i]), null, 's3-rule-container');
             }
             output += getHtml('div', null, 's3-code-area');
             $('#s3-theme-body').html(getHtml('div', output, 's3-body-inner'));
-            var defbits = def.split(/[^, ] ,/);
-            var valbits = [];
-            $('.s3-input').each(function (e) {
-                var desc = $(this).data('desc');
-                if (e < defbits.length) {
-                    var val = defbits[e];
-                    switch (desc.type) {
-                        case 'color':
-                            val = rgbStringToHex(val).hex;
-                            break;
-                        case 'range':
-                            val = +val.replace('px', '');
-                            break;
+            var disabler = $('.s3-disabled');
+            if (def === 'none') {
+                disabler.attr({checked: 'checked'});
+            } else {
+                var defbits = def.split(/[^, ] ,/),
+                valbits = [];
+                disabler.removeAttr('checked');
+                $('.s3-input').each(function (e) {
+                    var desc = $(this).data('desc');
+                    if (e < defbits.length) {
+                        var val = defbits[e];
+                        switch (desc.type) {
+                            case 'color':
+                                val = rgbStringToHex(val).hex;
+                                break;
+                            case 'range':
+                                val = +val.replace('px', '');
+                                break;
+                        }
+                        $(this).val(val);
+                        valbits[valbits.length] = val;
                     }
-                    $(this).val(val);
-                    valbits[valbits.length] = val;
+                });
+                updateCodeArea(r, valbits.join(' '));
+            }
+            
+            disabler.change(function () {
+                var s3i = $('.s3-input');
+                if (this.checked) {
+                    // Disable all inputs
+                    s3i.attr({disabled: 'disabled'});
+                    updateCodeArea(r, 'none');
+                    $(T.currentkey).css(cssrule, 'none');
+                } else {
+                    // Reenable the inputs and fire the on change event
+                    s3i.removeAttr('disabled');
+                    s3i.change();
                 }
             });
-            updateCodeArea(r, valbits.join(' '));
 
             $('.s3-input').change(function () {
-                var vb = [];
-                $('.s3-input').each(function (e) {
-                    vb[e] = this.value;
-                });
-                var cssvalue = vb.join(' ');
-                updateCodeArea(r, cssvalue);
-                console.log(r, cssvalue);
-                $(T.currentkey).css(r.replace(' ', '-'), cssvalue);
+                if (!disabler.length || !disabler[0].checked) {
+                    var vb = [];
+                    $('.s3-input').each(function (e) {
+                        vb[e] = this.value;
+                    });
+                    var cssvalue = vb.join(' ');
+                    updateCodeArea(r, cssvalue);
+                    $(T.currentkey).css(cssrule, cssvalue);
+                    if (!updatinghistory) {
+                        T.updatehistory(cssrule);
+                        console.log(T.history);
+                    }
+                }
             });
         }
+        
+        /**
+         * 
+         * @param {string} rule The css rule being updated
+         */
+        T.updatehistory = function (rule) {
+            updatinghistory = true;
+            // Make sure that there is nothing infront of the history
+            T.history = T.history.splice(0, T.historykey);
+            T.history[T.historykey] = {selector: T.currentkey, rule: rule, value: $(T.currentkey).css(rule)};
+            $('.s3-input').change();
+            T.historykey++;
+            updatinghistory = false;
+        };
 
         /**
          * Build the menu that allows the user to switch between rules to edit
@@ -489,6 +537,9 @@
             sl = detailscache[key]['allowedstyles'],
             mc = $('#s3-menu-item-container');
             mc.children().remove();
+            sl.sort(function (a, b) {
+                return (a > b) - (a < b);
+            });
             for (var i = 0; i < sl.length; i ++) {
                 mc.append(getHtml('span', sl[i], null, 's3-menu-item', {'data-rule': sl[i]}));
             }

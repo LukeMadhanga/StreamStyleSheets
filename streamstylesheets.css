@@ -303,7 +303,7 @@
     background: none;
     border: none;
 }
-.s3-number {
+.s3-number, .s3-text {
     padding: 10px;
     border: solid thin #ccc;
 }
