@@ -298,8 +298,6 @@
     window.streamStyleSheets = function (opts) {
         var T = {
             currentkey: null,
-            history: [],
-            historykey: 0,
             s: $.extend({
                 autoinit: true,
                 allowedpseudostates: ['hover'],
@@ -308,6 +306,10 @@
             }, opts),
             values: {}
         },
+        hist = [],
+        hkey = 0,
+        hint = null,
+        hentry,
         updatinghistory = false;
         
         
@@ -503,13 +505,14 @@
                     $('.s3-input').each(function (e) {
                         vb[e] = this.value;
                     });
-                    var cssvalue = vb.join(' ');
+                    var cssvalue = vb.join(' '),
+                    el = $(T.currentkey);
                     updateCodeArea(r, cssvalue);
-                    $(T.currentkey).css(cssrule, cssvalue);
                     if (!updatinghistory) {
-                        T.updatehistory(cssrule);
-                        console.log(T.history);
+                        T.updatehistory(cssrule, cssvalue);
+                        console.log(hist, hkey);
                     }
+                    el.css(cssrule, cssvalue);
                 }
             });
         }
@@ -517,15 +520,24 @@
         /**
          * 
          * @param {string} rule The css rule being updated
+         * @param {string} newvalue The css rule being updated
          */
-        T.updatehistory = function (rule) {
+        T.updatehistory = function (rule, newvalue) {
+            hentry = {selector: T.currentkey, rule: rule, undo: $(T.currentkey).css(rule), redo: newvalue};
+            if (hint !== null) {
+                // Only update the history every so and so
+                return false;
+            }
             updatinghistory = true;
             // Make sure that there is nothing infront of the history
-            T.history = T.history.splice(0, T.historykey);
-            T.history[T.historykey] = {selector: T.currentkey, rule: rule, value: $(T.currentkey).css(rule)};
+            hist = hist.splice(0, hkey);
+            hist[hkey] = hentry;
             $('.s3-input').change();
-            T.historykey++;
+            hkey++;
             updatinghistory = false;
+            hint = window.setTimeout(function () {
+                hint = null;
+            }, 500);
         };
 
         /**
@@ -554,8 +566,25 @@
             $('.s3-menu-item:first').click();
         };
         
+        /**
+         * Move in history
+         * @param {boolean} undo
+         */
+        function moveInHistory(undo) {
+            if (undo && hkey === 0 || !undo && hkey === (hist.length - 1)) {
+                // There is no movement in history
+                return;
+            }
+            console.log(undo, hist);
+            updatinghistory = true;
+            hkey = undo ? hkey - 1 : hkey + 1;
+            var obj = hist[hkey];
+            $(obj.selector).css(obj.rule, obj[undo ? 'undo' : 'redo']);
+            updatinghistory = false;
+        }
+        
         function initBinding() {
-            $(window).unbind('resize.s3').bind('resize.s3', function () {
+            $(window).unbind('resize.s3resize').bind('resize.s3resize', function () {
                 window.clearTimeout(resizeTimeout);
                 resizeTimeout = window.setTimeout(function () {
                     var dl = T.s.datalist;
@@ -568,6 +597,13 @@
                         });
                     }
                 }, 200);
+            });
+            $(window).unbind('keydown.s3kp').bind('keydown.s3kp', function (e) {
+                var iscmd = e.metaKey || e.ctrlKey;
+                if (iscmd && (e.which === 90 || e.which === 89) && ['INPUT', 'SELECT', 'TEXTAREA'].indexOf(e.target.tagName) === -1) {
+                    // An undo/redo has been requested
+                    moveInHistory(e.metaKey ? !(e.shiftKey && e.which === 90) : e.which === 90);
+                }
             });
             $('#s3-close-window').unbind('click.s3').bind('click.s3', function () {
                 $('.s3-active-pulse').removeClass('s3-active-pulse');
