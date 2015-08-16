@@ -302,6 +302,7 @@
     padding: 0;
     background: none;
     border: none;
+    height: 30px;
 }
 .s3-number, .s3-text {
     padding: 10px;
@@ -319,4 +320,6 @@
     font-weight: 300;
     font-size: 15px;
     margin: 20px 0 0;
+    color: #999;
+    cursor: default;
 }

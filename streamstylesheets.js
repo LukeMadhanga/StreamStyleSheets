@@ -492,6 +492,7 @@
                     s3i.attr({disabled: 'disabled'});
                     updateCodeArea(r, 'none');
                     $(T.currentkey).css(cssrule, 'none');
+                    T.updateHistory(cssrule, 'none');
                 } else {
                     // Reenable the inputs and fire the on change event
                     s3i.removeAttr('disabled');
@@ -509,8 +510,7 @@
                     el = $(T.currentkey);
                     updateCodeArea(r, cssvalue);
                     if (!updatinghistory) {
-                        T.updatehistory(cssrule, cssvalue);
-                        console.log(hist, hkey);
+                        T.updateHistory(cssrule, cssvalue);
                     }
                     el.css(cssrule, cssvalue);
                 }
@@ -522,7 +522,7 @@
          * @param {string} rule The css rule being updated
          * @param {string} newvalue The css rule being updated
          */
-        T.updatehistory = function (rule, newvalue) {
+        T.updateHistory = function (rule, newvalue) {
             hentry = {selector: T.currentkey, rule: rule, undo: $(T.currentkey).css(rule), redo: newvalue};
             if (hint !== null) {
                 // Only update the history every so and so
@@ -575,7 +575,6 @@
                 // There is no movement in history
                 return;
             }
-            console.log(undo, hist);
             updatinghistory = true;
             hkey = undo ? hkey - 1 : hkey + 1;
             var obj = hist[hkey];
