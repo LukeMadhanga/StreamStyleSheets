@@ -78,7 +78,6 @@
     rf.zIndex = rf.right = rf.bottom = rf.left = rf.top = rf.marginRight = rf.marginBottom = rf.marginLeft = rf.paddingRight = rf.paddingBottom = rf.paddingLeft = rf.paddingTop = rf.marginTop;
     rf.borderTop = rf.borderRight = rf.borderBottom = rf.borderLeft = rf.border;
     rf.color = rf.backgroundColor;
-    console.log(rf);
 
     /**
      * Trim the ends of a string
@@ -352,6 +351,7 @@
                 var curobj = dl[i],
                 elements = $(curobj.selector);
                 elements.data({'s3-settings': curobj});
+                T.values[curobj.selector] = {};
                 elements.each(function () {
                     var ev = $._data(this, 'events'),
                     key = getElementEventKey.call(this),
@@ -374,8 +374,13 @@
                             if (res) {
                                 // There is a value for this CSS rule
                                 // Determine whether the value is a default. If so, cache it as one, otherwise put it in the main css output
-                                var outputkey = styledefaults[rule] === res ? 'defcss' : 'css';
-                                ruleoutput[state ? state : 'main'] = res;
+                                var outputkey = styledefaults[rule] === res ? 'defcss' : 'css',
+                                statekey = state ? state : 'main';
+                                ruleoutput[statekey] = res;
+                                if (statekey === 'main' && outputkey === 'css') {
+                                    // Store the current states
+                                    T.values[curobj.selector][rule] = res;
+                                }
                                 hasstyles = true;
                             }
                         }
@@ -420,10 +425,15 @@
                 // The editor has already been built
                 return;
             }
-            var html = getHtml('div', T.renderHeadButtons(), 's3-editor-head');
-
+            var html = getHtml('div', T.renderHeadButtons(), 's3-editor-head'),
+            body = $('body');
             html += getHtml('div', null, 's3-theme-body');
-            $('body').append(getHtml('div', getHtml('div', html, 's3-theme-editor'), 's3-theme-editor-container', 's3-hidden'));
+            body.append(getHtml('div', getHtml('div', html, 's3-theme-editor'), 's3-theme-editor-container', 's3-hidden'));
+            body.append(getHtml('div',
+                getHtml('span', null, 's3-undo', 's3icons-reply s3-icon-button') +
+                getHtml('span', null, 's3-redo', 's3icons-forward s3-icon-button') + 
+                getHtml('span', null, 's3-save', 's3icons-check s3-icon-button'),
+            's3-button-bay'));
         };
 
         /**
@@ -582,6 +592,19 @@
             updatinghistory = false;
         }
         
+        function saveChanges() {
+            $('.s3-active-pulse').removeClass('s3-active-pulse');
+            $('.s3-active-dot').removeClass('s3-active-dot');
+            $('#s3-theme-editor-container').addClass('s3-hidden');
+            var cur = $(T.currentkey),
+            settings = cur.data('s3-settings');
+            for (var i = 0; i < settings.allowedstyles.length; i++) {
+                var rule = settings.allowedstyles[i];
+                T.values[settings.selector][rule] = cur.css(rule);
+            }
+            console.log(T.values);
+        }
+        
         function initBinding() {
             $(window).unbind('resize.s3resize').bind('resize.s3resize', function () {
                 window.clearTimeout(resizeTimeout);
@@ -604,11 +627,7 @@
                     moveInHistory(e.metaKey ? !(e.shiftKey && e.which === 90) : e.which === 90);
                 }
             });
-            $('#s3-close-window').unbind('click.s3').bind('click.s3', function () {
-                $('.s3-active-pulse').removeClass('s3-active-pulse');
-                $('.s3-active-dot').removeClass('s3-active-dot');
-                $('#s3-theme-editor-container').addClass('s3-hidden');
-            });
+            $('#s3-close-window').unbind('click.s3save').bind('click.s3save', saveChanges);
         }
 
         // Auto-executing function

@@ -323,3 +323,25 @@
     color: #999;
     cursor: default;
 }
+#s3-button-bay {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: right;
+    background-color: #E4E4E4;
+    border-top: solid thin #CCC;
+}
+.s3-icon-button {
+    padding: 10px;
+    display: inline-block;
+    border-left: solid thin #CCC;
+    box-sizing: border-box;
+    cursor: pointer;
+    background-color: #E4E4E4;
+    -webkit-transition: background-color 0.2s;
+    -moz-transition: background-color 0.2s;
+    transition: background-color 0.2s;
+}
+.s3-icon-button:hover {
+    background-color: #DDD;
+}
