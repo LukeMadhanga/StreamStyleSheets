@@ -260,11 +260,11 @@
     }
 
     /**
-     * 
+     * Get a style for an element
      * @from http://goo.gl/iCGy
-     * @param {type} elem
-     * @param {type} rule
-     * @returns {String}
+     * @param {DOMElement} elem The element from which to get the style
+     * @param {string} rule The css rule to retrieve
+     * @returns {string}
      */
     function getStyle(elem, rule) {
         var output = null;
@@ -298,10 +298,13 @@
         var T = {
             currentkey: null,
             s: $.extend({
+                active: false,
                 autoinit: true,
                 allowedpseudostates: ['hover'],
                 datalist: [],
-                oninit: ef
+                oninit: ef,
+                submitpath: '',
+                title: tx('Untitled')
             }, opts),
             values: {}
         },
@@ -311,7 +314,9 @@
         hentry,
         updatinghistory = false;
         
-        
+        /**
+         * Initialise the plugin
+         */
         T.init = function() {
             if (!$('#s3-pulse-container').length) {
                 // The pulse container has not yet been created, do so now
@@ -335,10 +340,6 @@
             if (is_a(func, 'function')) {
                 return func.apply(thisarg, toArray(arguments).splice(2));
             }
-        }
-
-        function runDefaultEvents() {
-
         }
         
         /**
@@ -426,10 +427,16 @@
                 return;
             }
             var html = getHtml('div', T.renderHeadButtons(), 's3-editor-head'),
-            body = $('body');
+            body = $('body'),
+            activeattrs = {type: 'checkbox'};
+            if (T.s.active) {
+                activeattrs['checked'] = 'checked';
+            }
             html += getHtml('div', null, 's3-theme-body');
             body.append(getHtml('div', getHtml('div', html, 's3-theme-editor'), 's3-theme-editor-container', 's3-hidden'));
             body.append(getHtml('div',
+                getHtml('input', null, 's3-title', null, {value: T.s.title}) +
+                getHtml('div', getHtml('span', 'Active') + getHtml('input', null, 's3-active-toggle', null, activeattrs), 's3-active') +
                 getHtml('span', null, 's3-undo', 's3icons-reply s3-icon-button') +
                 getHtml('span', null, 's3-redo', 's3icons-forward s3-icon-button') + 
                 getHtml('span', null, 's3-save', 's3icons-check s3-icon-button'),
@@ -444,7 +451,10 @@
             return getHtml('span', getHtml('div', null, 's3-menu-item-container'), 's3-menu', 's3-head-btn s3icons-reorder') + 
                     getHtml('span', null, 's3-close-window', 's3-head-btn s3icons-check');
         };
-
+        
+        /**
+         * Display the CSS editor
+         */
         T.displayEditor = function() {
             var t = $(this);
             $('.s3-pulse', t).addClass('s3-active-pulse');
@@ -454,7 +464,12 @@
             T.currentkey = t.data('s3-for');
         };
         
-        
+        /**
+         * 
+         * @param {type} data
+         * @param {type} rule
+         * @param {type} def
+         */
         function renderRules(data, rule, def) {
             if (!data) {
                 return;
@@ -528,7 +543,7 @@
         }
         
         /**
-         * 
+         * Update the history state
          * @param {string} rule The css rule being updated
          * @param {string} newvalue The css rule being updated
          */
@@ -592,6 +607,9 @@
             updatinghistory = false;
         }
         
+        /**
+         * Save the changes made
+         */
         function saveChanges() {
             $('.s3-active-pulse').removeClass('s3-active-pulse');
             $('.s3-active-dot').removeClass('s3-active-dot');
@@ -602,7 +620,6 @@
                 var rule = settings.allowedstyles[i];
                 T.values[settings.selector][rule] = cur.css(rule);
             }
-            console.log(T.values);
         }
         
         function initBinding() {
@@ -626,6 +643,35 @@
                     // An undo/redo has been requested
                     moveInHistory(e.metaKey ? !(e.shiftKey && e.which === 90) : e.which === 90);
                 }
+            });
+            $('#s3-undo').unbind('click.s3undo').bind('click.s3undo', function () {
+                moveInHistory(true);
+            });
+            $('#s3-redo').unbind('click.s3redo').bind('click.s3redo', function () {
+                moveInHistory();
+            });
+            $('#s3-save').unbind('click.s3save').bind('click.s3save', function () {
+                streamConfirm(tx('Are you sure?'), function () {
+                    $.ajax({
+                        url: T.s.submitpath,
+                        dataType: 'JSON',
+                        type: 'post',
+                        data: {payload: JSON.stringify({
+                                data: T.values, 
+                                title: $('#s3-title').val(), 
+                                active: $('#s3-active-toggle')[0].checked ? 1 : 0
+                            })}
+                    }).done(function (e) {
+                        if (e.result === 'OK') {
+                            document.location = e.data;
+                        } else {
+                            streamConfirm(tx('Oops'), function () {}, tx('Failed to save style changes'), {nocancel: true});
+                        }
+                    }).fail(function (e) {
+                        streamConfirm(tx('Oops'), function () {}, tx('Failed to save style changes'), {nocancel: true});
+                        console.error(e.responseText);
+                    });
+                }, tx('Are you sure that you want to modify this theme variant?'));
             });
             $('#s3-close-window').unbind('click.s3save').bind('click.s3save', saveChanges);
         }

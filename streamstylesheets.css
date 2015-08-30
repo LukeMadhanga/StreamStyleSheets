@@ -327,12 +327,16 @@
     position: fixed;
     bottom: 0;
     width: 100%;
+    min-width: 320px;
     text-align: right;
     background-color: #E4E4E4;
     border-top: solid thin #CCC;
 }
 .s3-icon-button {
-    padding: 10px;
+    padding: 10px;    
+    width: 40px;
+    height: 40px;
+    line-height: 20px;
     display: inline-block;
     border-left: solid thin #CCC;
     box-sizing: border-box;
@@ -344,4 +348,31 @@
 }
 .s3-icon-button:hover {
     background-color: #DDD;
+}
+#s3-title {
+    border: none;
+    outline: none;
+    background: none;
+    font-weight: bold;
+    display: inline-block;
+    width: 50%;
+    width: calc(100% - 220px);
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 14px;
+}
+#s3-active {
+    display: inline-block;
+    width: 100px;
+    height: 40px;
+    box-sizing: border-box;
+    vertical-align: top;
+    text-align: center;
+    padding: 10px;
+    font-weight: lighter;
+    font-size: 14px;
+    border-left: solid thin #ccc;
+}
+#s3-active > span {
+    margin: 0 5px 0 0;
 }
