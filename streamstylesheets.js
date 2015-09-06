@@ -302,7 +302,10 @@
                 autoinit: true,
                 allowedpseudostates: ['hover'],
                 datalist: [],
+                onbeforesave: ef,
                 oninit: ef,
+                onsave: ef,
+                onsavefail: ef,
                 submitpath: '',
                 title: tx('Untitled')
             }, opts),
@@ -322,7 +325,7 @@
                 // The pulse container has not yet been created, do so now
                 $('body').append(getHtml('div', null, 's3-pulse-container-all'));
             }
-            cacheDetails();
+            T.cacheDetails();
             T.renderEditor();
             initBinding();
             execCallback('init');
@@ -345,7 +348,7 @@
         /**
          * Cache CSS details about this item and jQuery events
          */
-        function cacheDetails() {
+        T.cacheDetails = function() {
             var dl = T.s.datalist;
             // Iterate through all of the objects supplied by the caller, getting the events and styles
             for (var i = 0; i < dl.length; i++) {
@@ -400,7 +403,7 @@
                     $(this).unbind();
                 });
             }
-        }
+        };
     
         /**
          * Render a pulse animation on the middle of an element
@@ -652,6 +655,9 @@
             });
             $('#s3-save').unbind('click.s3save').bind('click.s3save', function () {
                 streamConfirm(tx('Are you sure?'), function () {
+                    if (execCallback('beforesave', null, {instance: T}) === false) {
+                        return false;
+                    }
                     $.ajax({
                         url: T.s.submitpath,
                         dataType: 'JSON',
@@ -660,14 +666,20 @@
                                 data: T.values, 
                                 title: $('#s3-title').val(), 
                                 active: $('#s3-active-toggle')[0].checked ? 1 : 0
-                            })}
+                            })
+                        }
                     }).done(function (e) {
                         if (e.result === 'OK') {
+                            if (execCallback('save', null, {data: e.data}) === false) {
+                                return false;
+                            }
                             document.location = e.data;
                         } else {
+                            execCallback('savefail');
                             streamConfirm(tx('Oops'), function () {}, tx('Failed to save style changes'), {nocancel: true});
                         }
                     }).fail(function (e) {
+                        execCallback('savefail');
                         streamConfirm(tx('Oops'), function () {}, tx('Failed to save style changes'), {nocancel: true});
                         console.error(e.responseText);
                     });
