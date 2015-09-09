@@ -275,6 +275,16 @@
 .s3-input {
     outline: none;
     width: 100%;
+    box-sizing: border-box;
+}
+.s3-with-units {
+    width: 80%;
+    width: calc(100% - 50px);
+}
+.s3-units.s3-select {
+    width: 20%;
+    width: calc(50px - 0px);
+    border-left: none;
 }
 .s3-rule-title {
     font-family: 'Lato', sans-serif;
@@ -377,3 +387,19 @@
 #s3-active > span {
     margin: 0 5px 0 0;
 }
+.s3-enabled {
+    float: right;
+}
+
+.asdsadasd {
+    baseline-shift: as;
+}
+
+
+
+
+
+
+
+
+/*html body .cm-page-title {     font-weight: bold;     font-size: 32px;     font-family: Ubuntu, sans-serif;     border-bottom: 1px solid rgb(221, 221, 221);     padding: 40px;     color: rgb(0, 0, 0); } html body #headerbarbg {     background-color: rgb(255, 255, 255);     opacity: 0.5;     height: 50px; } html body {     background-color: rgb(238, 238, 238); } html .cm-single-page-body {     color: rgb(51, 51, 51);     font-weight: 100;     background-color: rgb(255, 255, 255);     box-shadow: none; } html body #headerbarbgstrip {     height: 20px;     opacity: 0.5;     background-color: rgb(255, 255, 255); }*/ 
